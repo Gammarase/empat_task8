@@ -1,7 +1,10 @@
-import 'package:empat_task8/models/post_state_model.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../models/bloc_post.dart';
+import '../models/event_post.dart';
+import '../models/state_bloc.dart';
 import 'custom_elements.dart';
 
 class MainPage extends StatelessWidget {
@@ -23,12 +26,12 @@ class MainPage extends StatelessWidget {
               const Expanded(
                 child: SizedBox(),
               ),
-              Consumer<PostModel>(builder: (context, value, child) {
+              BlocBuilder<PostBloc, PostState>(builder: (context, state) {
                 return InkWell(
-                  onTap: () => value.changeTheme(),
+                  onTap: () => context.read<PostBloc>().add(ChangeTheme()),
                   child: CustomButton(
                     child: Icon(
-                      value.whiteTheme ? Icons.sunny : Icons.dark_mode,
+                      state.whiteTheme ? Icons.sunny : Icons.dark_mode,
                       size: 35,
                       color: Colors.white,
                     ),
@@ -38,27 +41,27 @@ class MainPage extends StatelessWidget {
               const SizedBox(
                 width: 10,
               ),
-              Consumer<PostModel>(builder: (context, model, child) {
-                return InkWell(
-                  onTap: () {
-                    var response =
-                        Navigator.of(context).pushNamed('/registration');
-                    response.then(
-                      (value) {
-                        showMessage('Вітаємо, $value!', context);
-                        model.updateUserName(value.toString());
-                      },
-                    );
-                  },
-                  child: const CustomButton(
-                    child: Icon(
-                      Icons.account_circle,
-                      size: 35,
-                      color: Colors.white,
-                    ),
+              InkWell(
+                onTap: () {
+                  var response =
+                      Navigator.of(context).pushNamed('/registration');
+                  response.then(
+                    (value) {
+                      showMessage('Вітаємо, $value!', context);
+                      context
+                          .read<PostBloc>()
+                          .add(UpdateNickname(value.toString()));
+                    },
+                  );
+                },
+                child: const CustomButton(
+                  child: Icon(
+                    Icons.account_circle,
+                    size: 35,
+                    color: Colors.white,
                   ),
-                );
-              })
+                ),
+              )
             ],
           ),
         ),
@@ -68,47 +71,55 @@ class MainPage extends StatelessWidget {
         SizedBox(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height / 11,
-            child: FutureBuilder(
-              future: Provider.of<PostModel>(context).postsContent,
-              builder: (context, snapshot) {
-                return snapshot.hasData
-                    ? ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: snapshot.data?.length,
-                        itemBuilder: (context, index) => Padding(
-                          padding: const EdgeInsets.all(1),
-                          child: CustomAvatar(
-                            avatarRadius:
-                                MediaQuery.of(context).size.height / 11 - 10,
-                            borderThick: 10,
-                            photoIndex: index,
-                            ifSeenBorder: index < 5 && index != 0,
-                            ifSeenAdd: index == 0,
-                            photoData: snapshot.data?[index].imageData,
-                          ),
-                        ),
-                      )
-                    : Container();
-              },
+            child: BlocBuilder<PostBloc, PostState>(
+              builder: (context, state) {
+                return FutureBuilder(
+                  future: state.postsContent,
+                  builder: (context, snapshot) {
+                    return snapshot.hasData
+                        ? ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: snapshot.data?.length,
+                            itemBuilder: (context, index) => Padding(
+                              padding: const EdgeInsets.all(1),
+                              child: CustomAvatar(
+                                avatarRadius:
+                                    MediaQuery.of(context).size.height / 11 - 10,
+                                borderThick: 10,
+                                photoIndex: index,
+                                ifSeenBorder: index < 5 && index != 0,
+                                ifSeenAdd: index == 0,
+                                photoData: snapshot.data?[index].imageData,
+                              ),
+                            ),
+                          )
+                        : Container();
+                  },
+                );
+              }
             )),
         Expanded(
-          child: FutureBuilder(
-            future: Provider.of<PostModel>(context).postsContent,
-            builder: (context, snapshot) => snapshot.hasData
-                ? ListView.builder(
-                    itemCount: snapshot.data?.length,
-                    itemBuilder: (context, index) => PostWidget(
-                      postData: snapshot.data?[index],
-                      photoIndex: index,
-                    ),
-                  )
-                : const Center(
-                    child: Text(
-                      'DataLoading...',
-                      style:
-                          TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                    ),
-                  ),
+          child: BlocBuilder<PostBloc, PostState>(
+            builder: (context, state) {
+              return FutureBuilder(
+                future: state.postsContent,
+                builder: (context, snapshot) => snapshot.hasData
+                    ? ListView.builder(
+                        itemCount: snapshot.data?.length,
+                        itemBuilder: (context, index) => PostWidget(
+                          postData: snapshot.data?[index],
+                          photoIndex: index,
+                        ),
+                      )
+                    : const Center(
+                        child: Text(
+                          'DataLoading...',
+                          style:
+                              TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+              );
+            }
           ),
         )
       ],

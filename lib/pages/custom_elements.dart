@@ -1,10 +1,10 @@
 import 'dart:typed_data';
-
-import 'package:empat_task8/models/post_state_model.dart';
-import 'package:provider/provider.dart';
+import 'package:empat_task8/models/event_post.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../logic/logical_classes.dart';
+import '../models/bloc_post.dart';
+import '../models/state_bloc.dart';
 
 class CustomButton extends StatelessWidget {
   final Widget child;
@@ -181,18 +181,22 @@ class PostWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Consumer<PostModel>(
-                        builder: (context, value, child) {
+                      BlocBuilder<PostBloc, PostState>(
+                        builder: (context, state) {
                           return InkWell(
                             onTap: () {
-                              value.likedId.contains(photoIndex % 10)
-                                  ? value.removeLike(photoIndex % 10)
-                                  : value.addLike(photoIndex % 10);
+                              state.likedId.contains(photoIndex % 10)
+                                  ? context
+                                      .read<PostBloc>()
+                                      .add(RemoveLike(photoIndex % 10))
+                                  : context
+                                      .read<PostBloc>()
+                                      .add(AddLike(photoIndex % 10));
                             },
                             child: Icon(
                               Icons.thumb_up,
                               size: 35,
-                              color: value.likedId.contains(photoIndex % 10)
+                              color: state.likedId.contains(photoIndex % 10)
                                   ? Colors.red
                                   : null,
                             ),

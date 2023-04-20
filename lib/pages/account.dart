@@ -1,7 +1,9 @@
-import 'package:empat_task8/models/post_state_model.dart';
 import 'package:empat_task8/pages/custom_elements.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../models/bloc_post.dart';
+import '../models/state_bloc.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({Key? key}) : super(key: key);
@@ -16,10 +18,14 @@ class AccountPage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                Provider.of<PostModel>(context).userName,
-                style:
-                    const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+              BlocBuilder<PostBloc, PostState>(
+                builder: (context, state) {
+                  return Text(
+                    state.userName,
+                    style:
+                        const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+                  );
+                }
               ),
               const Icon(
                 Icons.menu,
@@ -38,17 +44,21 @@ class AccountPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      FutureBuilder(
-                          future: Provider.of<PostModel>(context).postsContent,
-                          builder: (context, snapshot) {
-                            return snapshot.hasData
-                                ? CustomAvatar(
-                                    photoData: snapshot.data?[0].imageData,
-                                    borderThick: 0,
-                                    avatarRadius: 100,
-                                  )
-                                : const Text('Image loading');
-                          }),
+                      BlocBuilder<PostBloc, PostState>(
+                        builder: (context, state) {
+                          return FutureBuilder(
+                              future: state.postsContent,
+                              builder: (context, snapshot) {
+                                return snapshot.hasData
+                                    ? CustomAvatar(
+                                        photoData: snapshot.data?[0].imageData,
+                                        borderThick: 0,
+                                        avatarRadius: 100,
+                                      )
+                                    : const Text('Image loading');
+                              });
+                        }
+                      ),
                       Column(
                         children: const [
                           Text(
@@ -159,51 +169,55 @@ class AccountPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                FutureBuilder(
-                    future: Provider.of<PostModel>(context).postsContent,
-                    builder: (context, snapshot) {
-                      return snapshot.hasData
-                          ? Wrap(
-                              children: List<Widget>.generate(
-                                snapshot.data!.length,
-                                (index) => SizedBox(
-                                  height: MediaQuery.of(context).size.width / 3,
-                                  width: MediaQuery.of(context).size.width / 3,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(1),
-                                    child: InkWell(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) => Material(
-                                              child: SafeArea(
-                                                child: PostWidget(
-                                                  postData:
-                                                      snapshot.data?[index],
-                                                  useHero: true,
-                                                  photoIndex: index,
+                BlocBuilder<PostBloc, PostState>(
+                  builder: (context, state) {
+                    return FutureBuilder(
+                        future: state.postsContent,
+                        builder: (context, snapshot) {
+                          return snapshot.hasData
+                              ? Wrap(
+                                  children: List<Widget>.generate(
+                                    snapshot.data!.length,
+                                    (index) => SizedBox(
+                                      height: MediaQuery.of(context).size.width / 3,
+                                      width: MediaQuery.of(context).size.width / 3,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(1),
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (context) => Material(
+                                                  child: SafeArea(
+                                                    child: PostWidget(
+                                                      postData:
+                                                          snapshot.data?[index],
+                                                      useHero: true,
+                                                      photoIndex: index,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
+                                            );
+                                          },
+                                          child: SelectivePhoto(
+                                            photoData:
+                                                snapshot.data?[index].imageData,
+                                            index: index,
                                           ),
-                                        );
-                                      },
-                                      child: SelectivePhoto(
-                                        photoData:
-                                            snapshot.data?[index].imageData,
-                                        index: index,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            )
-                          : const Text(
-                              'DataLoading...',
-                              style: TextStyle(
-                                  fontSize: 40, fontWeight: FontWeight.bold),
-                            );
-                    })
+                                )
+                              : const Text(
+                                  'DataLoading...',
+                                  style: TextStyle(
+                                      fontSize: 40, fontWeight: FontWeight.bold),
+                                );
+                        });
+                  }
+                )
               ],
             ),
           ),

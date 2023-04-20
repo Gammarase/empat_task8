@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:empat_task8/logic/logical_fuctions.dart';
 import 'package:empat_task8/pages/account.dart';
 import 'package:empat_task8/pages/custom_elements.dart';
@@ -9,13 +9,15 @@ import 'package:empat_task8/pages/photos.dart';
 import 'package:empat_task8/pages/registration.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import 'models/post_state_model.dart';
+
+import 'models/bloc_post.dart';
+import 'models/event_post.dart';
+import 'models/state_bloc.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => PostModel(),
+    BlocProvider(
+      create: (context) => PostBloc(),
       child: const MyApp(),
     ),
   );
@@ -26,20 +28,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        colorScheme: Provider.of<PostModel>(context).whiteTheme
-            ? null
-            : const ColorScheme.dark(),
-      ),
-      //home: const MyHomePage(),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const MyHomePage(),
-        '/registration': (context) => const RegistrationPage()
-      },
+    return BlocBuilder<PostBloc, PostState>(
+      builder: (context, state) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            colorScheme: state.whiteTheme
+                ? null
+                : const ColorScheme.dark(),
+          ),
+          //home: const MyHomePage(),
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const MyHomePage(),
+            '/registration': (context) => const RegistrationPage()
+          },
+        );
+      }
     );
   }
 }
@@ -141,23 +147,19 @@ class _MyHomePageState extends State<MyHomePage>
           children: pages,
         ),
       ),
-      floatingActionButton: Consumer<PostModel>(
-        builder: (context, state, child) {
-          return InkWell(
-            onTap: () {
-              uploadPicked().then((value) {
-                showMessage(value, context);
-                state.refreshPosts();
-              });
-            },
-            child: const CustomButton(
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-              ),
-            ),
-          );
+      floatingActionButton: InkWell(
+        onTap: () {
+          uploadPicked().then((value) {
+            showMessage(value, context);
+            context.read<PostBloc>().add(RefreshPosts());
+          });
         },
+        child: const CustomButton(
+          child: Icon(
+            Icons.add,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

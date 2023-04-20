@@ -1,6 +1,8 @@
+import 'package:empat_task8/models/bloc_post.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/post_state_model.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../models/event_post.dart';
+import '../models/state_bloc.dart';
 import 'custom_elements.dart';
 
 class PhotoNavigate extends StatelessWidget {
@@ -74,13 +76,17 @@ class PhotoPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                Counter(
-                  number: Provider.of<PostModel>(context)
-                      .selectedId
-                      .length
-                      .toString(),
-                  isVisible:
-                      Provider.of<PostModel>(context).selectedId.isNotEmpty,
+                BlocBuilder<PostBloc, PostState>(
+                  builder: (context, state) {
+                    return Counter(
+                      number: state
+                          .selectedId
+                          .length
+                          .toString(),
+                      isVisible:
+                          state.selectedId.isNotEmpty,
+                    );
+                  }
                 ),
               ],
             ),
@@ -93,10 +99,10 @@ class PhotoPage extends StatelessWidget {
                 width: MediaQuery.of(context).size.width / 3,
                 child: Padding(
                   padding: const EdgeInsets.all(1),
-                  child: Consumer<PostModel>(
-                    builder: (context, value, child) {
+                  child: BlocBuilder<PostBloc, PostState>(
+                    builder: (context, state) {
                       return FutureBuilder(
-                        future: value.postsContent,
+                        future: state.postsContent,
                         builder: (context, snapshot) => snapshot.hasData
                             ? InkWell(
                                 onTap: () {
@@ -111,16 +117,16 @@ class PhotoPage extends StatelessWidget {
                                   );
                                 },
                                 onLongPress: () {
-                                  value.selectedId.contains(index)
-                                      ? value.removeSelection(index)
-                                      : value.addSelection(index);
+                                  state.selectedId.contains(index)
+                                      ? context.read<PostBloc>().add(RemoveSelection(index))
+                                      : context.read<PostBloc>().add(AddSelection(index));
                                 },
                                 child: SelectivePhoto(
                                   photoData: snapshot
                                       .data?[index % snapshot.data!.length]
                                       .imageData,
                                   index: index,
-                                  isSelected: value.selectedId.contains(index),
+                                  isSelected: state.selectedId.contains(index),
                                 ),
                               )
                             : const Text('Image loading'),
